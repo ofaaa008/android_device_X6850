@@ -208,3 +208,6 @@ st21nfc.ko
 tnek.ko
 thd.ko
 sdcard_debug.ko
+adaptive-ts.ko
+focaltech_ft3683g.ko
+gt9916_common.ko

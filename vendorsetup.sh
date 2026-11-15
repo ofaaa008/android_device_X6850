@@ -68,7 +68,7 @@ if [ "$1" = "$FDEVICE" -o "$FOX_BUILD_DEVICE" = "$FDEVICE" ]; then
 	# Patches
 	RET=0
 	cd bootable/recovery
-	git apply ../../device/infinix/Infinix-X6850/patches/0001-Change-haptics-activation-file-path.patch > /dev/null 2>&1 || RET=$?
+	git apply ../../device/infinix/X6850/patches/0001-Change-haptics-activation-file-path.patch > /dev/null 2>&1 || RET=$?
 	cd ../../
 	if [ $RET -ne 0 ]; then
 		echo "ERROR: Patch is not applied! Maybe it's already patched?"
@@ -94,7 +94,7 @@ if [ "$1" = "$FDEVICE" -o "$FOX_BUILD_DEVICE" = "$FDEVICE" ]; then
 	export OF_DEFAULT_KEYMASTER_VERSION=4.1
 
 	# screen settings
-	export OF_SCREEN_H=2400
+	export OF_SCREEN_H=2436
 	export OF_STATUS_H=95
 	export OF_STATUS_INDENT_LEFT=48
 	export OF_STATUS_INDENT_RIGHT=48
