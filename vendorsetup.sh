@@ -33,7 +33,7 @@ fox_get_target_device() {
 	if [ "$IS_ZSH" -eq 1 ]; then
 		# ZSH implementation
 		local chkdev=$(echo "$SCRIPT_SOURCE" | grep -w "$FDEVICE")
-		if [ -n "$chkdev" ]; then 
+		if [ -n "$chkdev" ]; then
 			FOX_BUILD_DEVICE="$FDEVICE"
 		else
 			chkdev=$(set | grep -E "(argv|@)" | grep -w "$FDEVICE")
@@ -42,7 +42,7 @@ fox_get_target_device() {
 	else
 		# BASH implementation
 		local chkdev=$(echo "$SCRIPT_SOURCE" | grep -w "$FDEVICE")
-		if [ -n "$chkdev" ]; then 
+		if [ -n "$chkdev" ]; then
 			FOX_BUILD_DEVICE="$FDEVICE"
 		else
 			chkdev=$(set | grep BASH_ARGV | grep -w "$FDEVICE")
@@ -65,17 +65,20 @@ if [ "$1" = "$FDEVICE" -o "$FOX_BUILD_DEVICE" = "$FDEVICE" ]; then
 		fi
 	fi
 
-	# Patches
+	# Patches + prebuilt assets
 	RET=0
 	cd bootable/recovery
-	git apply ../../device/infinix/X6850/patches/0001-Change-haptics-activation-file-path.patch > /dev/null 2>&1 || RET=$?
+	git apply ../../device/infinix/X6850/patches/0001-haptics-multi-path.patch || RET=$?
+	git apply ../../device/infinix/X6850/patches/0002-flashlight-fallback.patch || RET=$?
+	cp -f ../../device/infinix/X6850/prebuilt/splash.png gui/theme/portrait_hdpi/images/Splash/user.png || RET=$?
+	cp -f ../../device/infinix/X6850/prebuilt/splash.xml gui/theme/portrait_hdpi/splash.xml || RET=$?
 	cd ../../
 	if [ $RET -ne 0 ]; then
 		echo "ERROR: Patch is not applied! Maybe it's already patched?"
 	else
 		echo "OK: All patched"
 	fi
-	
+
 	export FOX_USE_SPECIFIC_MAGISK_ZIP=~/Magisk/Magisk-v28.1.zip
 	export FOX_VIRTUAL_AB_DEVICE=1
 	export FOX_VANILLA_BUILD=1
@@ -100,13 +103,11 @@ if [ "$1" = "$FDEVICE" -o "$FOX_BUILD_DEVICE" = "$FDEVICE" ]; then
 	export OF_STATUS_INDENT_RIGHT=48
 	export OF_ALLOW_DISABLE_NAVBAR=0
 	export OF_CLOCK_POS=1
-	
+
 	# other stuff
 	export OF_QUICK_BACKUP_LIST="/boot:/data"
 	export OF_ENABLE_LPTOOLS=1
 	export OF_NO_TREBLE_COMPATIBILITY_CHECK=1
-	export FOX_USE_BASH_SHELL=1
-	export FOX_USE_NANO_EDITOR=1
 
 	# number of list options before scrollbar creation
 	export OF_OPTIONS_LIST_NUM=9
@@ -130,9 +131,9 @@ if [ "$1" = "$FDEVICE" -o "$FOX_BUILD_DEVICE" = "$FDEVICE" ]; then
 	# build all the partition tools
 	export OF_ENABLE_ALL_PARTITION_TOOLS=1
 
-	# variant
-	export OF_MAINTAINER="Opek_Furina"
-	#export FOX_VARIANT="R12
+	# maintainer
+	export OF_MAINTAINER="erikshelby"
 
-	# no flashlight
-	export OF_FLASHLIGHT_ENABLE=0
+	# flashlight
+	export OF_FLASHLIGHT_ENABLE=1
+fi

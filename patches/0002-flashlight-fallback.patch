@@ -1,0 +1,33 @@
+diff --git a/gui/action.cpp b/gui/action.cpp
+index 293dd16..0c8e19d 100755
+--- a/gui/action.cpp
++++ b/gui/action.cpp
+@@ -2599,6 +2599,28 @@ int GUIAction::flashlightImpl(std::string arg __unused)
+ 			path_one = path_two;
+ 			path_two = "";
+ 		}
++
++		// X6850: if the default torch node is missing, probe other common LED names
++		if (!path_one.empty() && !TWFunc::Path_Exists(path_one + "/brightness")) {
++			static const char* torch_dirs[] = {
++				"/sys/class/leds/led:torch_1",
++				"/sys/class/leds/led:flash_0",
++				"/sys/class/leds/led:flash_1",
++				"/sys/class/leds/torch-light0",
++				"/sys/class/leds/torch-light1",
++				"/sys/class/leds/flashlight",
++				"/sys/class/leds/white",
++				nullptr
++			};
++			for (int i = 0; torch_dirs[i] != nullptr; i++) {
++				if (TWFunc::Path_Exists(std::string(torch_dirs[i]) + "/brightness")) {
++					LOGINFO("X6850: using flashlight path %s\n", torch_dirs[i]);
++					path_one = torch_dirs[i];
++					path_two = "";
++					break;
++				}
++			}
++		}
+ 		
+ 		if (!path_one.empty()) {
+ 			bright_one = path_one + "/brightness";

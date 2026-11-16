@@ -1,0 +1,39 @@
+diff --git a/minuitwrp/events.cpp b/minuitwrp/events.cpp
+index e497df6..704daaa 100644
+--- a/minuitwrp/events.cpp
++++ b/minuitwrp/events.cpp
+@@ -182,11 +182,29 @@ int vibrate(int timeout_ms)
+         write_to_file(VIBRATOR_TIMEOUT_FILE, tout);
+     }
+ #else
+-    if (std::ifstream(LEDS_HAPTICS_ACTIVATE_FILE).good()) {
+-        write_to_file(LEDS_HAPTICS_DURATION_FILE, tout);
+-        write_to_file(LEDS_HAPTICS_ACTIVATE_FILE, "1");
+-    } else
+-        write_to_file(VIBRATOR_TIMEOUT_FILE, tout);
++    // X6850: probe the common LED-class vibrator nodes (MTK / AWINIC variants)
++    {
++        static const char* vib_dirs[] = {
++            "/sys/class/leds/vibrator",
++            "/sys/class/leds/vibrator_single",
++            "/sys/class/leds/aw862xx_haptic",
++            "/sys/class/leds/vibrator_aw",
++            "/sys/class/leds/haptic",
++            nullptr
++        };
++        bool vib_done = false;
++        for (int i = 0; vib_dirs[i] != nullptr; i++) {
++            std::string act = std::string(vib_dirs[i]) + "/activate";
++            if (std::ifstream(act).good()) {
++                write_to_file(std::string(vib_dirs[i]) + "/duration", tout);
++                write_to_file(act, "1");
++                vib_done = true;
++                break;
++            }
++        }
++        if (!vib_done)
++            write_to_file(VIBRATOR_TIMEOUT_FILE, tout);
++    }
+ #endif
+     return 0;
+ }
