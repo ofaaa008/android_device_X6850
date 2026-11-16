@@ -57,12 +57,10 @@ fi
 
 if [ "$1" = "$FDEVICE" -o "$FOX_BUILD_DEVICE" = "$FDEVICE" ]; then
 	if [ -z "$THIS_DEVICE" ]; then
-		if [ "$IS_ZSH" -eq 1 ]; then
-			echo "NOTE: Running in ZSH mode"
-		else
-			echo "ERROR! This script couldn't detect the device properly. Make sure you're using bash or zsh."
-			exit 1
-		fi
+		# CI (GitHub Actions) sources envsetup.sh without positional args and
+		# exports FOX_BUILD_DEVICE beforehand, so THIS_DEVICE is legitimately
+		# empty there. Do NOT abort - just continue.
+		echo "NOTE: device not detected from shell args (FOX_BUILD_DEVICE=$FOX_BUILD_DEVICE), continuing"
 	fi
 
 	# Patches + prebuilt assets

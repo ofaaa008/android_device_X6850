@@ -1,8 +1,8 @@
 diff --git a/minuitwrp/events.cpp b/minuitwrp/events.cpp
-index e497df6..704daaa 100644
+index e497df6..ac278a8 100644
 --- a/minuitwrp/events.cpp
 +++ b/minuitwrp/events.cpp
-@@ -182,11 +182,29 @@ int vibrate(int timeout_ms)
+@@ -182,11 +182,49 @@ int vibrate(int timeout_ms)
          write_to_file(VIBRATOR_TIMEOUT_FILE, tout);
      }
  #else
@@ -11,7 +11,8 @@ index e497df6..704daaa 100644
 -        write_to_file(LEDS_HAPTICS_ACTIVATE_FILE, "1");
 -    } else
 -        write_to_file(VIBRATOR_TIMEOUT_FILE, tout);
-+    // X6850: probe the common LED-class vibrator nodes (MTK / AWINIC variants)
++    /* X6850: the vibrator node name differs between drivers, so probe the
++       common ones instead of hardcoding a single path. */
 +    {
 +        static const char* vib_dirs[] = {
 +            "/sys/class/leds/vibrator",
@@ -22,6 +23,7 @@ index e497df6..704daaa 100644
 +            nullptr
 +        };
 +        bool vib_done = false;
++
 +        for (int i = 0; vib_dirs[i] != nullptr; i++) {
 +            std::string act = std::string(vib_dirs[i]) + "/activate";
 +            if (std::ifstream(act).good()) {
@@ -31,6 +33,24 @@ index e497df6..704daaa 100644
 +                break;
 +            }
 +        }
++
++        if (!vib_done) {
++            /* MTK often registers a timed_output device instead ("vibrator0") */
++            static const char* timed_files[] = {
++                "/sys/class/timed_output/vibrator0/enable",
++                "/sys/class/timed_output/vibrator/enable",
++                "/sys/class/timed_output/vibrator1/enable",
++                nullptr
++            };
++            for (int i = 0; timed_files[i] != nullptr; i++) {
++                if (std::ifstream(timed_files[i]).good()) {
++                    write_to_file(timed_files[i], tout);
++                    vib_done = true;
++                    break;
++                }
++            }
++        }
++
 +        if (!vib_done)
 +            write_to_file(VIBRATOR_TIMEOUT_FILE, tout);
 +    }

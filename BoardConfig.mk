@@ -150,6 +150,9 @@ TARGET_USES_MKE2FS := true
 TW_MAX_BRIGHTNESS := 255
 TW_LOAD_VENDOR_BOOT_MODULES := true
 
+# modules TWRP must load in recovery (matching kernel 5.10.226 set in recovery/root/lib/modules)
+TW_LOAD_VENDOR_MODULES := "i2c-mt65xx.ko leds-aw22xxx.ko richtap_haptic_hv.ko musb_main.ko extcon-mtk-usb.ko tran_otg.ko tran_usb_ctrl.ko usb_switch_evo.ko tran_adapter_control.ko"
+
 # StatusBar
 TW_STATUS_ICONS_ALIGN := center
 TW_CUSTOM_CPU_POS := 300
