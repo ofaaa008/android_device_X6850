@@ -1,48 +1,85 @@
 #!/sbin/sh
-# X6850 hardware bring-up that has to happen *after* drivers bind.
-# Started as a oneshot service, so waiting here never blocks init.
+# X6850 hardware bring-up: OTG host (primary), haptics + theme (best effort).
+# Runs as a oneshot service started from "on post-fs-data".
 
-# --- haptics ---------------------------------------------------------------
-# AW8692x sits on i2c-6 @ 0x5A. "activate"/"duration" only appear once the
-# richtap_haptic_hv driver has probed the client.
+LOG=/tmp/of_hw_init.log
+: > "$LOG" 2>/dev/null
+log() { echo "$*" >> "$LOG" 2>/dev/null; }
+
+# --- OTG host role ---------------------------------------------------------
+# The stock ROM enables the host role at sys.boot_completed=1 via the
+# Transsion battery driver. Without it no host controller is created, so no
+# /dev/block/sd* ever appears and TWRP's USB-OTG entry stays unticked.
+OTGS="/sys/devices/platform/odm/odm:tran_battery/OTG_CTL
+/sys/devices/platform/odm/tran_battery/OTG_CTL
+/dev/tran_battery/OTG_CTL"
+
 i=0
-while [ $i -lt 20 ]; do
+while [ $i -lt 15 ]; do
+	for n in $OTGS; do
+		[ -e "$n" ] && break 2
+	done
+	i=$((i + 1))
+	sleep 1
+done
+
+otg_done=0
+for n in $OTGS; do
+	if [ -e "$n" ]; then
+		chmod 0666 "$n" 2>/dev/null
+		echo 1 > "$n" 2>/dev/null && otg_done=1
+		log "OTG_CTL written: $n -> $(cat "$n" 2>/dev/null)"
+		break
+	fi
+done
+[ $otg_done -eq 0 ] && log "OTG_CTL: node not found"
+
+# Dump what the USB stack looks like, so failures can be diagnosed from /tmp.
+{
+	log "--- udc ---";   ls /sys/class/udc 2>&1
+	log "--- extcon ---"; ls /sys/class/extcon 2>&1
+	log "--- usb_role ---"; ls /sys/class/usb_role 2>&1
+	log "--- block ---";  ls /dev/block/sd* 2>&1
+	for e in /sys/class/extcon/*/name; do
+		[ -e "$e" ] && log "extcon: $(cat "$e") state=$(cat "${e%/*}/state" 2>/dev/null)"
+	done
+} >> "$LOG" 2>&1
+
+# --- haptics (best effort) -------------------------------------------------
+i=0
+while [ $i -lt 10 ]; do
+	[ -e /sys/class/leds/vibrator/brightness ] && break
 	[ -e /sys/bus/i2c/devices/6-005a/activate ] && break
 	i=$((i + 1))
 	sleep 1
 done
-if [ -e /sys/bus/i2c/devices/6-005a/activate ]; then
+if [ -e /sys/class/leds/vibrator/brightness ]; then
+	echo 255 > /sys/class/leds/vibrator/brightness 2>/dev/null
+	sleep 1
+	echo 0 > /sys/class/leds/vibrator/brightness 2>/dev/null
+	log "haptics: led-class brightness path used"
+elif [ -e /sys/bus/i2c/devices/6-005a/activate ]; then
 	echo 100 > /sys/bus/i2c/devices/6-005a/duration 2>/dev/null
 	echo 1  > /sys/bus/i2c/devices/6-005a/activate 2>/dev/null
+	log "haptics: i2c 6-005a path used"
+else
+	log "haptics: no usable node"
 fi
 
-# --- OTG host role ---------------------------------------------------------
-# Same node the stock ROM writes at sys.boot_completed=1.
-i=0
-while [ $i -lt 20 ]; do
-	[ -e /sys/devices/platform/odm/odm:tran_battery/OTG_CTL ] && break
-	i=$((i + 1))
-	sleep 1
-done
-for n in /sys/devices/platform/odm/odm:tran_battery/OTG_CTL \
-         /sys/devices/platform/odm/tran_battery/OTG_CTL; do
-	[ -e "$n" ] && echo 1 > "$n" 2>/dev/null && break
-done
-
-# --- USB gadget side (adb / ums) -------------------------------------------
-for u in /sys/class/udc/*; do
-	[ -e "$u/soft_connect" ] && echo "$(basename "$u")" > "$u/soft_connect" 2>/dev/null
-done
-
 # --- default theme (Black + Red) -------------------------------------------
-# Waits for /data to be mounted/decrypted, then seeds the theme only if the
-# user has not saved one of their own.
+# Needs /data mounted; the GUI may already be up, in which case the theme
+# applies from the next recovery boot (files are read at GUI load).
 i=0
-while [ $i -lt 60 ]; do
+while [ $i -lt 30 ]; do
 	[ -d /data/media/0 ] && break
 	i=$((i + 1))
 	sleep 1
 done
-[ -x /system/bin/of_set_theme ] && /system/bin/of_set_theme
+if [ -d /data/media/0 ]; then
+	[ -x /system/bin/of_set_theme ] && /system/bin/of_set_theme >> "$LOG" 2>&1
+	log "theme: seeded in /data/media/0/Fox/.theme"
+else
+	log "theme: /data not mounted, skipped"
+fi
 
 exit 0

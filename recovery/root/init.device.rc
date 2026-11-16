@@ -19,10 +19,18 @@ on init
     insmod /lib/modules/tran_otg.ko 2>/dev/null
 
 # Everything that needs sysfs nodes or a mounted /data runs in this oneshot
-# service (it sleeps while waiting, so init is never blocked).
+# service (it sleeps while waiting, so init is never blocked). Started from
+# "on post-fs-data", which is guaranteed to fire in the TWRP ramdisk.
 service of_hw_init /system/bin/sh /system/bin/of_hw_init
-    class late_start
+    class main
     user root
     group root system shell
     oneshot
     seclabel u:r:recovery:s0
+
+on post-fs-data
+    start of_hw_init
+
+# Leaving recovery to Android: drop OTG host role so normal charging works again.
+on property:sys.usb.config=adb
+    exec - -- /bin/sh -c "n=/sys/devices/platform/odm/odm:tran_battery/OTG_CTL; [ -e $n ] && echo 0 > $n; true"

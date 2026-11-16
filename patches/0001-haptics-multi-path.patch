@@ -1,8 +1,16 @@
 diff --git a/minuitwrp/events.cpp b/minuitwrp/events.cpp
-index e497df6..ac278a8 100644
+index e497df6..614ebac 100644
 --- a/minuitwrp/events.cpp
 +++ b/minuitwrp/events.cpp
-@@ -182,11 +182,49 @@ int vibrate(int timeout_ms)
+@@ -24,6 +24,7 @@
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <unistd.h>
++#include <algorithm>
+ #include <stdio.h>
+ #include <string.h>
+ #include <fstream>
+@@ -182,11 +183,55 @@ int vibrate(int timeout_ms)
          write_to_file(VIBRATOR_TIMEOUT_FILE, tout);
      }
  #else
@@ -12,8 +20,14 @@ index e497df6..ac278a8 100644
 -    } else
 -        write_to_file(VIBRATOR_TIMEOUT_FILE, tout);
 +    /* X6850: the vibrator node name differs between drivers, so probe the
-+       common ones instead of hardcoding a single path. */
-+    {
++       common ones instead of hardcoding a single path. The led-class
++       "brightness" file is handled first (Transsion/aw862xx style, see
++       device_tree_twrp-x6885), then the duration/activate pairs. */
++    if (std::ifstream("/sys/class/leds/vibrator/brightness").good()) {
++        write_to_file("/sys/class/leds/vibrator/brightness", "255");
++        usleep(std::min(timeout_ms, 500) * 1000);
++        write_to_file("/sys/class/leds/vibrator/brightness", "0");
++    } else {
 +        static const char* vib_dirs[] = {
 +            "/sys/class/leds/vibrator",
 +            "/sys/class/leds/vibrator_single",

@@ -37,12 +37,11 @@
 
 # Removable Storage
 /external_sd		auto		/dev/block/mmcblk1p1		/dev/block/mmcblk0p1				flags=display="Micro SD Card";storage;wipeingui;removable;backup=0
-/usb_otg			auto		/dev/block/sdg1		/dev/block/sdg				flags=display="USB-OTG";storage;wipeingui;removable;backup=0
+/usb_otg			auto		/dev/block/sdd1		/dev/block/sdd				flags=display="USB OTG";storage;wipeingui;removable;backup=0
 # Extra OTG candidates: the last letter depends on how many block devices the
 # kernel enumerates, so list several and let TWRP pick whichever exists.
-/usb_otg2			auto		/dev/block/sdd1		/dev/block/sdd				flags=display="USB-OTG (sdd)";storage;wipeingui;removable;backup=0
-/usb_otg3			auto		/dev/block/sde1		/dev/block/sde				flags=display="USB-OTG (sde)";storage;wipeingui;removable;backup=0
-/usb_otg4			auto		/dev/block/sdf1		/dev/block/sdf				flags=display="USB-OTG (sdf)";storage;wipeingui;removable;backup=0
+/usb_otg3			auto		/dev/block/sde1		/dev/block/sde				flags=display="USB OTG (sde)";storage;wipeingui;removable;backup=0
+/usb_otg4			auto		/dev/block/sdf1		/dev/block/sdf				flags=display="USB OTG (sdf)";storage;wipeingui;removable;backup=0
 
 # Flashable logical partitions
 /system_image		emmc		/dev/block/bootdevice/by-name/system							flags=backup;flashimg
