@@ -1,36 +1,30 @@
 <?xml version="1.0"?>
-<!-- 
+<!--
 	OrangeFox Splash (X6850 - erikshelby)
-	Custom splash background, no logo overlay
+	Artwork sendiri: gambar penuh layar, plus wordmark OrangeFox di bagian bawah.
+	Wordmark sengaja dipindah ke bawah supaya tidak menutupi loga/wajah di tengah gambar.
 -->
 <recovery>
 	<details>
-		<resolution width="1080" h="1920"/>
-		<themeversion>{themeversion}</themeversion>
+		<resolution width="1080"/>
+		<themeversion>3</themeversion>
 	</details>
-	
+
 	<resources>
 		<image name="splash_bg" filename="Splash/user" retainaspect="1"/>
-		<font name="of" filename="InterDisplay-Medium.ttf" size="64"/>
-		<font name="recovery" filename="InterDisplay-Regular.ttf" size="52"/>
+		<font name="of" filename="InterDisplay-Medium.ttf" size="56"/>
+		<font name="recovery" filename="InterDisplay-Regular.ttf" size="44"/>
 	</resources>
 
 	<variables>
-		<variable name="of" value="%screen_h%-400"/>
-		<variable name="rec" value="%screen_h%-320"/>
-		<variable name="screen_width" value="1080"/>
-		<variable name="screen_height" value="1920"/>
-		<variable name="header_color" value="#000000"/>
+		<variable name="of" value="%screen_h%-215"/>
+		<variable name="rec" value="%screen_h%-155"/>
 		<variable name="background_color" value="#000000"/>
 	</variables>
 
 	<pages>
 		<page name="splash">
 			<background color="%background_color%"/>
-
-			<fill color="%header_color%">
-				<placement x="0" y="0" w="%screen_width%" h="%screen_height%"/>
-			</fill>
 
 			<image>
 				<image resource="splash_bg"/>
@@ -45,7 +39,7 @@
 
 			<text style="menu_text">
 				<placement x="540" y="%rec%" placement="4"/>
-				<font resource="recovery" color="#ffffff"/>
+				<font resource="recovery" color="#ff8c00"/>
 				<text>Recovery</text>
 			</text>
 		</page>

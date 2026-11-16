@@ -70,6 +70,7 @@ if [ "$1" = "$FDEVICE" -o "$FOX_BUILD_DEVICE" = "$FDEVICE" ]; then
 	git apply ../../device/infinix/X6850/patches/0002-flashlight-fallback.patch || RET=$?
 	cp -f ../../device/infinix/X6850/prebuilt/splash.png gui/theme/portrait_hdpi/images/Splash/user.png || RET=$?
 	cp -f ../../device/infinix/X6850/prebuilt/splash.xml gui/theme/portrait_hdpi/splash.xml || RET=$?
+	cp -f ../../device/infinix/X6850/prebuilt/maintainer.png gui/theme/portrait_hdpi/images/Default/About/maintainer.png || RET=$?
 	cd ../../
 	if [ $RET -ne 0 ]; then
 		echo "ERROR: Patch is not applied! Maybe it's already patched?"
