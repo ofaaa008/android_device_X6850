@@ -45,6 +45,34 @@ done
 	done
 } >> "$LOG" 2>&1
 
+# --- OTG host role watcher (background, never blocks boot) ------------------
+# OTG_CTL only enables the VBUS boost. Switching the port to host role is
+# normally done by the Type-C controller (tcpc_rt1711h) when it detects an
+# OTG adapter; this watcher is the fallback: as soon as any extcon reports
+# USB-HOST=1 (host attach detected), write "host" to the usb_role switch.
+# Loop runs at most 90s, 2s apart, then gives up quietly.
+(
+	ROLE=""
+	for r in /sys/class/usb_role/*/role; do
+		[ -e "$r" ] && ROLE="$r" && break
+	done
+	[ -n "$ROLE" ] || ROLE=/sys/class/usb_role/mt_usb-role-switch/role
+	i=0
+	while [ $i -lt 45 ]; do
+		if grep -q "USB-HOST=1" /sys/class/extcon/*/state 2>/dev/null; then
+			chmod 0666 "$ROLE" 2>/dev/null
+			echo host > "$ROLE" 2>/dev/null
+			log "OTG: host attach detected, role -> $(cat "$ROLE" 2>/dev/null)"
+			sleep 5
+			log "OTG: after host switch, sd*: $(ls /dev/block/sd[def]* 2>/dev/null | tr '\n' ' ')"
+			exit 0
+		fi
+		i=$((i + 1))
+		sleep 2
+	done
+	log "OTG: no host attach seen within 90s (watcher exit)"
+) &
+
 # --- haptics (best effort) -------------------------------------------------
 i=0
 while [ $i -lt 10 ]; do
