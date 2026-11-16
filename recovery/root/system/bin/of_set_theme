@@ -1,0 +1,33 @@
+#!/sbin/sh
+# OrangeFox default theme for X6850 (erikshelby): Black + Red.
+# The theme actually used at boot lives in <Fox_Settings_Path>/.theme/ which is
+# /sdcard/Fox/.theme (i.e. /data/media/0/Fox/.theme). TWRP reads those files and
+# only falls back to /twres/themes/*.xml when they are absent. Seeding them here
+# (without overwriting a user's own choice) makes Black+Red the default.
+
+THEME_DIR=/data/media/0/Fox/.theme
+SRC=/twres/themes
+
+# Only create what does not exist yet; never clobber a saved preference.
+if [ -d /data/media/0/Fox ]; then
+	mkdir -p "$THEME_DIR"
+
+	if [ ! -f "$THEME_DIR/style.xml" ] && [ -f "$SRC/styles/Black.xml" ]; then
+		cp -f "$SRC/styles/Black.xml" "$THEME_DIR/style.xml"
+	fi
+
+	if [ ! -f "$THEME_DIR/accent.xml" ] && [ -f "$SRC/sed/accent.xml" ]; then
+		# Red accent, matching the "Red" preset in Workshop (light #E53935).
+		sed -e 's/#ACCENT_NAME#/Red/g' \
+		    -e 's/#COLOR_LIGHT#/#E53935/g' \
+		    -e 's/#COLOR_DARK#/#E53935/g' \
+		    -e 's/#COLOR#/#E53935/g' \
+		    "$SRC/sed/accent.xml" > "$THEME_DIR/accent.xml"
+	fi
+
+	chmod 0660 "$THEME_DIR"/*.xml 2>/dev/null
+	chown media_rw:media_rw "$THEME_DIR"/*.xml 2>/dev/null || chown 1023:1023 "$THEME_DIR"/*.xml 2>/dev/null
+	restorecon -R "$THEME_DIR" 2>/dev/null
+fi
+
+exit 0

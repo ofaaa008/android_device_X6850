@@ -1,0 +1,48 @@
+#!/sbin/sh
+# X6850 hardware bring-up that has to happen *after* drivers bind.
+# Started as a oneshot service, so waiting here never blocks init.
+
+# --- haptics ---------------------------------------------------------------
+# AW8692x sits on i2c-6 @ 0x5A. "activate"/"duration" only appear once the
+# richtap_haptic_hv driver has probed the client.
+i=0
+while [ $i -lt 20 ]; do
+	[ -e /sys/bus/i2c/devices/6-005a/activate ] && break
+	i=$((i + 1))
+	sleep 1
+done
+if [ -e /sys/bus/i2c/devices/6-005a/activate ]; then
+	echo 100 > /sys/bus/i2c/devices/6-005a/duration 2>/dev/null
+	echo 1  > /sys/bus/i2c/devices/6-005a/activate 2>/dev/null
+fi
+
+# --- OTG host role ---------------------------------------------------------
+# Same node the stock ROM writes at sys.boot_completed=1.
+i=0
+while [ $i -lt 20 ]; do
+	[ -e /sys/devices/platform/odm/odm:tran_battery/OTG_CTL ] && break
+	i=$((i + 1))
+	sleep 1
+done
+for n in /sys/devices/platform/odm/odm:tran_battery/OTG_CTL \
+         /sys/devices/platform/odm/tran_battery/OTG_CTL; do
+	[ -e "$n" ] && echo 1 > "$n" 2>/dev/null && break
+done
+
+# --- USB gadget side (adb / ums) -------------------------------------------
+for u in /sys/class/udc/*; do
+	[ -e "$u/soft_connect" ] && echo "$(basename "$u")" > "$u/soft_connect" 2>/dev/null
+done
+
+# --- default theme (Black + Red) -------------------------------------------
+# Waits for /data to be mounted/decrypted, then seeds the theme only if the
+# user has not saved one of their own.
+i=0
+while [ $i -lt 60 ]; do
+	[ -d /data/media/0 ] && break
+	i=$((i + 1))
+	sleep 1
+done
+[ -x /system/bin/of_set_theme ] && /system/bin/of_set_theme
+
+exit 0
