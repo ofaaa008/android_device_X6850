@@ -2,3 +2,36 @@ on init
     insmod /vendor/lib/modules/adaptive-ts.ko
     insmod /vendor/lib/modules/focaltech_ft3683g.ko
     insmod /vendor/lib/modules/gt9916_common.ko
+
+# --- X6850: haptics + OTG ---------------------------------------------------
+# Drivers may be built into the kernel (nothing to insmod) or shipped as
+# modules; "insmod ... 2>/dev/null" keeps boot quiet in both cases, while the
+# module loader (TW_LOAD_VENDOR_MODULES) already covers dependency-ordering.
+on init
+    insmod /lib/modules/i2c-mt65xx.ko 2>/dev/null
+    insmod /lib/modules/leds-aw22xxx.ko 2>/dev/null
+    insmod /lib/modules/richtap_haptic_hv.ko 2>/dev/null
+    insmod /lib/modules/musb_main.ko 2>/dev/null
+    insmod /lib/modules/extcon-mtk-usb.ko 2>/dev/null
+    insmod /lib/modules/tran_adapter_control.ko 2>/dev/null
+    insmod /lib/modules/tran_usb_ctrl.ko 2>/dev/null
+    insmod /lib/modules/usb_switch_evo.ko 2>/dev/null
+    insmod /lib/modules/tran_otg.ko 2>/dev/null
+
+# AW8692x haptic: "duration" then "activate" (retry until the client binds).
+on init
+    exec - -- /bin/sh -c "for i in 1 2 3 4 5 6; do [ -e /sys/bus/i2c/devices/6-005a/activate ] && break; sleep 1; done; f=/sys/bus/i2c/devices/6-005a; [ -e $f/activate ] && { echo 100 > $f/duration; echo 1 > $f/activate; } ; true"
+
+# Transsion OTG host role. Same node the ROM writes at sys.boot_completed=1;
+# reboot_rc writes it again when leaving recovery so charging is restored.
+on init
+    exec - -- /bin/sh -c "n=/sys/devices/platform/odm/odm:tran_battery/OTG_CTL; for i in 1 2 3 4 5; do [ -e $n ] && break; sleep 1; done; [ -e $n ] || n=/sys/devices/platform/odm/tran_battery/OTG_CTL; [ -e $n ] && echo 1 > $n; true"
+
+# Bind the USB gadget side (recovery adb/ums) to the controller so a plugged
+# OTG stick is enumerated; harmless when nothing is connected.
+on init
+    exec - -- /bin/sh -c "for u in /sys/class/udc/*; do [ -e \"$u/soft_connect\" ] && echo $(basename $u) > $u/soft_connect; done; true"
+
+# Leaving recovery to Android: drop OTG host role so normal charging works again.
+on property:sys.usb.config=adb
+    exec - -- /bin/sh -c "n=/sys/devices/platform/odm/odm:tran_battery/OTG_CTL; [ -e $n ] && echo 0 > $n; true"
