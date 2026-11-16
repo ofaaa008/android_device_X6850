@@ -1,0 +1,19 @@
+#!/sbin/sh
+# Clear a stale "boot-fastboot" command from the BCB in misc.
+#
+# TWRP/OrangeFox reads the BCB on every startup and enters fastboot mode if
+# the command says boot-fastboot. This device's LK ignores reboot targets,
+# so a leftover command (e.g. from Reboot -> Fastboot) is never consumed by
+# the bootloader and instead hijacks every later recovery boot into fastboot
+# mode. Only boot-fastboot is cleared; boot-recovery is left untouched.
+
+m=/dev/block/bootdevice/by-name/misc
+[ -e "$m" ] || m=/dev/block/by-name/misc
+[ -e "$m" ] || exit 0
+
+c=$(dd if="$m" bs=32 count=1 2>/dev/null | tr -d '\0')
+if [ "$c" = "boot-fastboot" ]; then
+	dd if=/dev/zero of="$m" bs=2048 count=1 2>/dev/null
+fi
+
+exit 0
