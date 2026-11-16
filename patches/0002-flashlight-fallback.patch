@@ -1,33 +1,63 @@
 diff --git a/gui/action.cpp b/gui/action.cpp
-index 293dd16..0c8e19d 100755
+index 293dd16..c0c03ba 100755
 --- a/gui/action.cpp
 +++ b/gui/action.cpp
-@@ -2599,6 +2599,28 @@ int GUIAction::flashlightImpl(std::string arg __unused)
+@@ -2586,8 +2586,11 @@ int GUIAction::flashlightImpl(std::string arg __unused)
+ 		DataManager::GetValue("of_flash_on", fl_used);
+ 		
+ 		if (path_one.empty() && path_two.empty()) {
+-			// maintainer not set flash paths
+-			if (TWFunc::Path_Exists("/sys/class/leds/flashlight/brightness")) {
++			// Transsion/MTK "torch" class (X6850 and friends): the node is a plain
++			// level file, e.g. /sys/class/torch/torch/torch_level (rear flash)
++			if (TWFunc::Path_Exists("/sys/class/torch/torch/torch_level")) {
++				path_one = "/sys/class/torch/torch/torch_level";
++			} else if (TWFunc::Path_Exists("/sys/class/leds/flashlight/brightness")) {
+ 				// use flashlight for old devices
+ 				path_one = "/sys/class/leds/flashlight";
+ 			} else {
+@@ -2599,8 +2602,22 @@ int GUIAction::flashlightImpl(std::string arg __unused)
  			path_one = path_two;
  			path_two = "";
  		}
 +
-+		// X6850: if the default torch node is missing, probe other common LED names
-+		if (!path_one.empty() && !TWFunc::Path_Exists(path_one + "/brightness")) {
-+			static const char* torch_dirs[] = {
-+				"/sys/class/leds/led:torch_1",
-+				"/sys/class/leds/led:flash_0",
-+				"/sys/class/leds/led:flash_1",
-+				"/sys/class/leds/torch-light0",
-+				"/sys/class/leds/torch-light1",
-+				"/sys/class/leds/flashlight",
-+				"/sys/class/leds/white",
-+				nullptr
-+			};
-+			for (int i = 0; torch_dirs[i] != nullptr; i++) {
-+				if (TWFunc::Path_Exists(std::string(torch_dirs[i]) + "/brightness")) {
-+					LOGINFO("X6850: using flashlight path %s\n", torch_dirs[i]);
-+					path_one = torch_dirs[i];
-+					path_two = "";
-+					break;
-+				}
-+			}
-+		}
++		// X6850: a "level" style node is a plain file (no brightness/max_brightness
++		// sub-files), so it has to be written directly with 1/0.
++		bool level_one = !path_one.empty() && TWFunc::Path_Exists(path_one) && !TWFunc::Path_Exists(path_one + "/brightness");
++		bool level_two = !path_two.empty() && TWFunc::Path_Exists(path_two) && !TWFunc::Path_Exists(path_two + "/brightness");
  		
  		if (!path_one.empty()) {
++			if (level_one) {
++				if (fl_used == "0") {
++					TWFunc::write_to_file(path_one, "1");
++					DataManager::SetValue("of_flash_on", "1");
++				} else {
++					TWFunc::write_to_file(path_one, "0");
++					DataManager::SetValue("of_flash_on", "0");
++				}
++			} else {
  			bright_one = path_one + "/brightness";
+ 			max_one = path_one + "/max_brightness";
+ 			if (TWFunc::Path_Exists(max_one)) {
+@@ -2622,9 +2639,13 @@ int GUIAction::flashlightImpl(std::string arg __unused)
+ 				gui_print_color("warning", "Flashlight file not found!\n");
+ 				return 0;
+ 			}
++			}
+ 		}
+ 		
+ 		if (!path_two.empty()) {
++			if (level_two) {
++				TWFunc::write_to_file(path_two, DataManager::GetIntValue("of_flash_on") ? "1" : "0");
++			} else {
+ 			bright_two = path_two + "/brightness";
+ 			max_two = path_two + "/max_brightness";
+ 			if (TWFunc::Path_Exists(bright_two)) {
+@@ -2642,6 +2663,7 @@ int GUIAction::flashlightImpl(std::string arg __unused)
+           DataManager::SetValue("of_flash_on", "0");
+ 				}
+ 			}
++			}
+ 		}
+   }
+   return 0;

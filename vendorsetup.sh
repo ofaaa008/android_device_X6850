@@ -132,6 +132,8 @@ if [ "$1" = "$FDEVICE" -o "$FOX_BUILD_DEVICE" = "$FDEVICE" ]; then
 	# maintainer
 	export OF_MAINTAINER="erikshelby"
 
-	# flashlight
+	# flashlight (Transsion/MTK "torch" class node; rear flash = torch_level)
 	export OF_FLASHLIGHT_ENABLE=1
+	export OF_FL_PATH1=/sys/class/torch/torch/torch_level
+	export OF_FL_PATH2=
 fi
