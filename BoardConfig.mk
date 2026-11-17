@@ -151,7 +151,12 @@ TW_MAX_BRIGHTNESS := 255
 TW_LOAD_VENDOR_BOOT_MODULES := true
 
 # modules TWRP must load in recovery (matching kernel 5.10.226 set in recovery/root/lib/modules)
-TW_LOAD_VENDOR_MODULES := "i2c-mt65xx.ko leds-aw22xxx.ko richtap_haptic_hv.ko musb_main.ko extcon-mtk-usb.ko tcpc_rt1711h.ko tran_otg.ko tran_usb_ctrl.ko usb_switch_evo.ko tran_adapter_control.ko"
+TW_LOAD_VENDOR_MODULES := "i2c-mt65xx.ko leds-aw22xxx.ko richtap_haptic_hv.ko mtk_wdt.ko reboot-mode.ko syscon-reboot-mode.ko musb_main.ko extcon-mtk-usb.ko tcpc_rt1711h.ko tran_otg.ko tran_usb_ctrl.ko usb_switch_evo.ko tran_adapter_control.ko"
+# mtk_wdt/reboot-mode/syscon-reboot-mode: R12 core renames modules.load.recovery
+# to .disabled, so init never loads them; without syscon-reboot-mode bound under
+# watchdog@10007000 the kernel can't stamp mode-recovery (0x02) into the WDT
+# register and the bootloader boots the system instead of recovery (Reboot ->
+# Recovery bug). R11.3 loads these three and its reboot-to-recovery works.
 
 # StatusBar
 TW_STATUS_ICONS_ALIGN := center
